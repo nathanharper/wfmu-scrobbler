@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+
 const LastFm = require('lastfm-node-client');
 const { Command } = require('commander');
 const prompts = require('prompts');
@@ -16,18 +19,27 @@ program
 program.parse(process.argv);
 const options = program.opts();
 
-const API_KEY = process.env.API_KEY;
-const API_SECRET = process.env.API_SECRET;
+const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
+const LASTFM_API_SECRET = process.env.LASTFM_API_SECRET;
 
 (async () => {
 	let lfm;
+	const sessionCache = path.resolve(__dirname, '.session_cache');
 
 	if (!options.sessionKey) {
-		lfm = new LastFm(API_KEY, API_SECRET)
+		try {
+			options.sessionKey = fs.readFileSync(sessionCache).toString();
+		} catch (e) {
+			options.sessionKey = null;
+		}
+	}
+
+	if (!options.sessionKey) {
+		lfm = new LastFm(LASTFM_API_KEY, LASTFM_API_SECRET);
 
 		const { token } = await lfm.authGetToken()
 
-		console.log(`Confirm after authenticating at this url: http://www.last.fm/api/auth/?api_key=${API_KEY}&token=${token}`)
+		console.log(`Confirm after authenticating at this url: http://www.last.fm/api/auth/?api_key=${LASTFM_API_KEY}&token=${token}`)
 
 		const response = await prompts({
 			type: 'confirm',
@@ -42,9 +54,11 @@ const API_SECRET = process.env.API_SECRET;
 
 		const { session } = await lfm.authGetSession({ token })
 		options.sessionKey = session.key
+
+		fs.writeFile(sessionCache, session.key, () => {});
 	}
 
-	lfm = new LastFm(API_KEY, API_SECRET, options.sessionKey)
+	lfm = new LastFm(LASTFM_API_KEY, LASTFM_API_SECRET, options.sessionKey)
 
 	lfm.trackScrobbleMany([{
 		artist: options.artist,
