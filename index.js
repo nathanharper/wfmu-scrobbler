@@ -7,10 +7,10 @@ const program = new Command();
 program.version('0.0.1');
 
 program
-	.option('-a, --artist <artist>', 'artist')
+	.requiredOption('-a, --artist <artist>', 'artist')
+	.requiredOption('-t, --track <track>', 'track')
 	.option('-l, --album <album>', 'album')
 	.option('-b, --album-artist <artist>', 'album artist')
-	.option('-t, --track <track>', 'track')
 	.option('-s, --session-key <key>', 'session key');
 
 program.parse(process.argv);
